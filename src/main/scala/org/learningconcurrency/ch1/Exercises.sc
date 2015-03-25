@@ -30,7 +30,7 @@ def all[T](xs: Seq[T])(pred: T => Boolean): Boolean = {
   false
 }
 all(0 until 10)(isOdd) == false
-all(0 until 10 by 2)(isOdd) == true
+all(1 until 10 by 2)(isOdd) == true
 
 // Things get trickier now...
 
