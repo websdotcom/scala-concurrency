@@ -2,6 +2,9 @@
 *.iml
 .idea
 
+# not intellij
+.vimrc
+
 # sbt output
 target
 SCALA-README.md
