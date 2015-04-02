@@ -1,6 +1,9 @@
+package org.learningconcurrency
+package ch2
+
 import org.learningconcurrency.ch2.SynchronizedProtectedUid
 
-object Exercises2 extends App {
+object Exercises extends App {
   /** Takes two computation blocks and starts each of them in a new thread.
     *
     * @return a tuple with the result values of both computations
@@ -8,7 +11,7 @@ object Exercises2 extends App {
   def parallel[A, B](a: =>A, b: =>B): (A, B) = {
     val t1 = new Thread {
       var result :Option[A] = None
-      override def run() = { result = Some(a) }
+      override def run() { result = Some(a) }
     }
     val t2 = new Thread {
       var result :Option[B] = None
@@ -24,7 +27,17 @@ object Exercises2 extends App {
     * @param duration number of milliseconds between executions
     * @param b the block of code to execute every `duration` milliseconds
     */
-  def periodically(duration: Long)(b: =>Unit): Unit = ???
+  def periodically(duration: Long, b: =>Unit): Unit = {
+    val t1 = new Thread {
+      import scala.annotation.tailrec
+      override def run() {
+        Thread.sleep(duration)
+        b
+        run()
+      }
+    }
+    t1.start()
+  }
 
   /** Used to exchange values between two or more threads.
     *
@@ -34,20 +47,29 @@ object Exercises2 extends App {
     * @tparam T the type of variable stored
     */
   class SyncVar[T] {
+    var value: Option[T] = None
 
     /** If non-empty, returns the current value and changes state to empty;
       * throws an exception otherwise.
       */
-    def get(): T = ???
+    def get(): T = value match {
+      case Some(x) => value = None; x
+      case None => throw new IllegalStateException("Cannot get before put.")
+    }
 
     /** If empty, adds a value to this object and changes state to non-empty;
       * throws an exception otherwise.
       */
-    def put(x: T): Unit = ???
+    def put(x: T): Unit = {
+      value match {
+        case Some(value) => throw new IllegalStateException("Cannot put after put.")
+        case None => value = Some(x)
+      }
+    }
 
-    def isEmpty(): Boolean = ???
+    def isEmpty(): Boolean = value == None
 
-    def nonEmpty(): Boolean = ???
+    def nonEmpty(): Boolean = value != None
 
     /** Waits until this object is non-empty, then returns the current value and
       * changes state to empty.
@@ -106,5 +128,13 @@ object Exercises2 extends App {
     def shutdown(): Unit = ???
   }
 
-  println(parallel[Integer,Integer]({ Thread.sleep(2000); 2 + 3 }, { Thread.sleep(5000); 3 + 5 }))
+  //println(parallel[Integer,Integer]({ Thread.sleep(2000); 2 + 3 }, { Thread.sleep(5000); 3 + 5 }))
+  //periodically(2000, { println("...") })
+  val myvar = new SyncVar[Integer]()
+  println(myvar.isEmpty())
+  println(myvar.nonEmpty())
+  myvar.put(1)
+  println(myvar.isEmpty())
+  println(myvar.nonEmpty())
+  println(myvar.get())
 }
